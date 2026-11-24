@@ -1,5 +1,7 @@
 # TicketChain: Decentralized Event Ticketing System
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/gt1432/blockchain-event-ticketing)
+
 > A production-grade decentralized event ticketing web application utilizing Solidity smart contracts and ERC-721 NFTs to create, purchase, transfer, resell, and verify digital event passes with smart contract-enforced anti-scalping rules.
 
 ---
