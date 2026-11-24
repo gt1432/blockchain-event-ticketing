@@ -1,0 +1,29 @@
+services:
+  # Frontend Static Site
+  - type: web
+    name: ticketchain-frontend
+    runtime: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_CONTRACT_ADDRESS
+        sync: false
+      - key: VITE_CHAIN_ID
+        value: 11155111
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # Optional Backend API
+  - type: web
+    name: ticketchain-backend
+    runtime: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_URL
+        sync: false
