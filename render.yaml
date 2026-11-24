@@ -1,7 +1,7 @@
 services:
   # Frontend Static Site
   - type: web
-    name: blockchain-event
+    name: ticketchain-frontend
     runtime: static
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/dist
