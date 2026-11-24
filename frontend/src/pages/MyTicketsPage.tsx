@@ -9,6 +9,8 @@ import {
   Loader2,
   X,
   TrendingDown,
+  Wallet,
+  Sparkles,
 } from "lucide-react";
 import { TicketItem, WalletState } from "../types";
 import {
@@ -17,6 +19,7 @@ import {
   cancelResaleListing,
   formatEth,
   ethToInr,
+  INITIAL_DEMO_TICKETS,
 } from "../services/web3Service";
 import { useTransaction } from "../hooks/useTransaction";
 import { TransactionModal } from "../components/TransactionModal";
@@ -27,8 +30,8 @@ interface MyTicketsPageProps {
 }
 
 export const MyTicketsPage: React.FC<MyTicketsPageProps> = ({ wallet }) => {
-  const [tickets, setTickets] = useState<TicketItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tickets, setTickets] = useState<TicketItem[]>(INITIAL_DEMO_TICKETS);
+  const [loading, setLoading] = useState(false);
 
   // Resale modal state
   const [resaleModalOpen, setResaleModalOpen] = useState(false);
@@ -40,13 +43,12 @@ export const MyTicketsPage: React.FC<MyTicketsPageProps> = ({ wallet }) => {
 
   const loadTickets = async () => {
     if (!wallet.address) {
-      setTickets([]);
-      setLoading(false);
+      setTickets(INITIAL_DEMO_TICKETS);
       return;
     }
     setLoading(true);
     const list = await fetchUserTickets(wallet.address);
-    setTickets(list);
+    setTickets(list.length > 0 ? list : INITIAL_DEMO_TICKETS);
     setLoading(false);
   };
 
@@ -88,6 +90,11 @@ export const MyTicketsPage: React.FC<MyTicketsPageProps> = ({ wallet }) => {
     if (!selectedTicket) return;
     if (priceError) return;
 
+    if (!wallet.isConnected) {
+      alert("Please connect MetaMask in the top bar to sign this on-chain transaction.");
+      return;
+    }
+
     try {
       await execute(
         () => listTicketForResale(selectedTicket.tokenId, resalePriceEth),
@@ -101,6 +108,11 @@ export const MyTicketsPage: React.FC<MyTicketsPageProps> = ({ wallet }) => {
   };
 
   const handleCancelResale = async (tokenId: number) => {
+    if (!wallet.isConnected) {
+      alert("Please connect MetaMask to cancel resale listing on-chain.");
+      return;
+    }
+
     try {
       await execute(
         () => cancelResaleListing(tokenId),
@@ -112,18 +124,6 @@ export const MyTicketsPage: React.FC<MyTicketsPageProps> = ({ wallet }) => {
     }
   };
 
-  if (!wallet.isConnected) {
-    return (
-      <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-4">
-        <Ticket className="w-16 h-16 text-purple-400 mx-auto" />
-        <h2 className="font-display font-bold text-2xl text-white">Connect Your Wallet</h2>
-        <p className="text-xs text-slate-400">
-          Please connect your MetaMask wallet to view your owned NFT passes and dynamic QR codes.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-7xl mx-auto px-4 lg:px-8 py-10 space-y-8">
       {/* Header */}
@@ -134,9 +134,22 @@ export const MyTicketsPage: React.FC<MyTicketsPageProps> = ({ wallet }) => {
         </p>
       </div>
 
+      {/* Guest Mode Banner if not connected */}
+      {!wallet.isConnected && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-900/30 via-indigo-900/30 to-blue-900/30 border border-purple-500/30 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 backdrop-blur-md">
+          <div className="flex items-center gap-2.5 text-purple-200">
+            <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span>
+              <strong>Guest Showcase Mode:</strong> Showing your sample NFT passes below. Connect MetaMask at any time to mint, buy, or list on the live Ethereum blockchain.
+            </span>
+          </div>
+          <span className="font-mono text-cyan-300 font-semibold shrink-0">Demo Passes Active</span>
+        </div>
+      )}
+
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((n) => (
+          {[1, 2].map((n) => (
             <div key={n} className="h-96 glass-panel rounded-3xl animate-pulse" />
           ))}
         </div>
@@ -155,7 +168,7 @@ export const MyTicketsPage: React.FC<MyTicketsPageProps> = ({ wallet }) => {
       ) : (
         <div className="text-center py-20 glass-panel rounded-3xl border border-white/10 space-y-4">
           <Ticket className="w-12 h-12 text-slate-500 mx-auto" />
-          <h3 className="font-display font-bold text-lg text-white">You Don't Own Any Tickets Yet</h3>
+          <h3 className="font-display font-bold text-lg text-white">No Tickets Found</h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
             Discover upcoming concerts, festivals, and conferences to mint your first verifiable NFT ticket pass.
           </p>
@@ -190,7 +203,6 @@ export const MyTicketsPage: React.FC<MyTicketsPageProps> = ({ wallet }) => {
               <p className="text-xs text-slate-400">{selectedTicket.event.name}</p>
             </div>
 
-            {/* Smart Contract Bounds Info */}
             <div className="p-3 bg-white/5 rounded-2xl border border-white/5 space-y-1.5 text-xs">
               <div className="flex justify-between text-slate-400">
                 <span>Original Face Value:</span>
