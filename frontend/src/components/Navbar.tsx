@@ -12,12 +12,13 @@ import {
   X,
   Sparkles,
 } from "lucide-react";
-import { WalletState } from "../types";
+import { WalletState, DemoRole } from "../types";
 import { WalletButton } from "./WalletButton";
 
 interface NavbarProps {
   wallet: WalletState;
   onConnect: () => void;
+  onConnectDemo: (role: DemoRole) => void;
   onDisconnect: () => void;
   onSwitchNetwork: (chainId: number) => void;
 }
@@ -25,6 +26,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   wallet,
   onConnect,
+  onConnectDemo,
   onDisconnect,
   onSwitchNetwork,
 }) => {
@@ -93,6 +95,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <WalletButton
             wallet={wallet}
             onConnect={onConnect}
+            onConnectDemo={onConnectDemo}
             onDisconnect={onDisconnect}
             onSwitchNetwork={onSwitchNetwork}
           />
@@ -102,6 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <WalletButton
             wallet={wallet}
             onConnect={onConnect}
+            onConnectDemo={onConnectDemo}
             onDisconnect={onDisconnect}
             onSwitchNetwork={onSwitchNetwork}
             compact

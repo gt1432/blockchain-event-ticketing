@@ -16,14 +16,15 @@ import { Ticket, ShieldCheck, Heart } from "lucide-react";
 import { CONTRACT_ADDRESS, formatAddress } from "./services/web3Service";
 
 export default function App() {
-  const { wallet, connect, disconnect, switchNetwork } = useWallet();
+  const { wallet, connect, connectDemo, disconnect, switchNetwork } = useWallet();
 
   return (
     <div className="min-h-screen bg-[#070913] text-slate-100 flex flex-col font-sans selection:bg-purple-500 selection:text-white">
-      {/* Navbar */}
+      {/* Navbar with Demo Mode and MetaMask support */}
       <Navbar
         wallet={wallet}
         onConnect={connect}
+        onConnectDemo={connectDemo}
         onDisconnect={disconnect}
         onSwitchNetwork={switchNetwork}
       />
@@ -71,7 +72,7 @@ export default function App() {
               <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
               <span>Contract: {formatAddress(CONTRACT_ADDRESS)}</span>
             </div>
-            <div className="text-slate-500">ERC-721 Standard • Hardhat & Sepolia Ready</div>
+            <div className="text-slate-500">ERC-721 Standard â€¢ Hardhat & Sepolia Ready</div>
           </div>
         </div>
       </footer>

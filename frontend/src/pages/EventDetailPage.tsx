@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
+  Sparkles,
   Calendar,
   MapPin,
   Ticket,
@@ -92,7 +93,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ wallet }) => {
 
   const handlePurchase = async () => {
     if (!wallet.isConnected) {
-      alert("Please connect MetaMask first.");
+      alert("Please connect MetaMask or select 'Demo Mode' -> Attendee (Alice) in the top navbar to test ticket purchase.");
       return;
     }
 
@@ -277,6 +278,18 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ wallet }) => {
             <div className="text-center text-[10px] text-slate-400">
               Transaction settles immediately on Ethereum. Ticket NFT will appear in "My Tickets".
             </div>
+
+            {!wallet.isConnected && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-center space-y-1">
+                <p className="text-[11px] text-amber-200 font-semibold flex items-center justify-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  Testing without MetaMask?
+                </p>
+                <p className="text-[10px] text-slate-400">
+                  Select <strong>Demo Mode</strong> in the top right to instantly test purchasing & minting this NFT ticket pass.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

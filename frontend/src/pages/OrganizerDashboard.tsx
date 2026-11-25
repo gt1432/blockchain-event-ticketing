@@ -70,7 +70,7 @@ export const OrganizerDashboard: React.FC<OrganizerDashboardProps> = ({ wallet }
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wallet.isConnected) {
-      alert("Please connect MetaMask.");
+      alert("Please connect MetaMask or select 'Demo Mode' -> Organizer (Bob) in the top navbar to publish events.");
       return;
     }
 

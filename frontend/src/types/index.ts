@@ -1,3 +1,5 @@
+export type DemoRole = 'attendee' | 'organizer' | 'verifier';
+
 export interface EventItem {
   id: number;
   name: string;
@@ -40,6 +42,8 @@ export interface ResaleListingItem {
 }
 
 export interface WalletState {
+  isDemo?: boolean;
+  demoRole?: DemoRole;
   address: string | null;
   chainId: number | null;
   isConnected: boolean;

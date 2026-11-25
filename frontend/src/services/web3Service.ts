@@ -1,7 +1,7 @@
 import { ethers, BrowserProvider, Contract } from "ethers";
 import EventTicketingABI from "../constants/EventTicketing.abi.json";
 import deployments from "../constants/deployments.json";
-import { EventItem, TicketItem, ResaleListingItem } from "../types";
+import { EventItem, TicketItem, ResaleListingItem, DemoRole } from "../types";
 
 export const CONTRACT_ADDRESS =
   (import.meta as any).env?.VITE_CONTRACT_ADDRESS || deployments.contractAddress;
@@ -207,6 +207,61 @@ export const INITIAL_DEMO_TICKETS: TicketItem[] = [
   },
 ];
 
+
+export const DEMO_ACCOUNTS = {
+  attendee: {
+    name: "Alice (Attendee)",
+    address: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    role: "attendee" as DemoRole,
+  },
+  organizer: {
+    name: "Bob (Organizer)",
+    address: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    role: "organizer" as DemoRole,
+  },
+  verifier: {
+    name: "Gate Staff (Verifier)",
+    address: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    role: "verifier" as DemoRole,
+  },
+};
+
+let activeDemoWallet: { isDemo: boolean; role: DemoRole; address: string } | null = null;
+let demoEventsState: EventItem[] = [...INITIAL_DEMO_EVENTS];
+let demoTicketsState: TicketItem[] = [...INITIAL_DEMO_TICKETS];
+let demoResaleState: ResaleListingItem[] = [...INITIAL_DEMO_RESALE];
+
+export function setDemoWallet(isDemo: boolean, role: DemoRole = "attendee", address?: string) {
+  if (!isDemo) {
+    activeDemoWallet = null;
+  } else {
+    activeDemoWallet = {
+      isDemo: true,
+      role,
+      address: address || DEMO_ACCOUNTS[role]?.address || DEMO_ACCOUNTS.attendee.address,
+    };
+  }
+}
+
+export function isDemoActive(): boolean {
+  return !!activeDemoWallet?.isDemo;
+}
+
+export function getActiveDemoWallet() {
+  return activeDemoWallet;
+}
+
+function createSimulatedTx(actionDesc: string) {
+  const mockHash = "0x" + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+  return {
+    hash: mockHash,
+    wait: async () => {
+      await new Promise((r) => setTimeout(r, 900));
+      return { hash: mockHash, status: 1 };
+    },
+  };
+}
+
 export function getProvider(): BrowserProvider | null {
   if (typeof window === "undefined" || !(window as any).ethereum) return null;
   return new BrowserProvider((window as any).ethereum);
@@ -268,7 +323,7 @@ export async function fetchAllEvents(): Promise<EventItem[]> {
     const count = Number(total);
 
     if (count === 0) {
-      return INITIAL_DEMO_EVENTS;
+      return demoEventsState;
     }
 
     const list: EventItem[] = [];
@@ -295,7 +350,7 @@ export async function fetchAllEvents(): Promise<EventItem[]> {
     }
     return list.length > 0 ? list : INITIAL_DEMO_EVENTS;
   } catch (error) {
-    return INITIAL_DEMO_EVENTS;
+    return demoEventsState;
   }
 }
 
@@ -365,9 +420,9 @@ export async function fetchUserTickets(userAddress: string): Promise<TicketItem[
         console.warn("Failed to fetch ticket", tid, e);
       }
     }
-    return tickets.length > 0 ? tickets : INITIAL_DEMO_TICKETS;
+    return tickets.length > 0 ? tickets : demoTicketsState;
   } catch (error) {
-    return INITIAL_DEMO_TICKETS;
+    return demoTicketsState;
   }
 }
 
@@ -377,7 +432,7 @@ export async function fetchResaleListings(): Promise<ResaleListingItem[]> {
     const tokenIds = await contract.getResaleListings();
 
     if (tokenIds.length === 0) {
-      return INITIAL_DEMO_RESALE;
+      return demoResaleState;
     }
 
     const listings: ResaleListingItem[] = [];
@@ -404,7 +459,7 @@ export async function fetchResaleListings(): Promise<ResaleListingItem[]> {
         console.warn("Failed to load listing for token", tid, e);
       }
     }
-    return listings.length > 0 ? listings : INITIAL_DEMO_RESALE;
+    return listings.length > 0 ? listings : demoResaleState;
   } catch (err) {
     return INITIAL_DEMO_RESALE;
   }
@@ -434,6 +489,27 @@ export async function createEvent(
   maxResalePriceEth: string,
   imageURI: string
 ) {
+  if (isDemoActive() || (typeof window !== "undefined" && !(window as any).ethereum)) {
+    const newId = demoEventsState.length + 1;
+    const priceWei = ethers.parseEther(ticketPriceEth);
+    const maxWei = ethers.parseEther(maxResalePriceEth);
+    const newEv: EventItem = {
+      id: newId,
+      name,
+      description,
+      venue,
+      date: dateUnix,
+      totalTickets,
+      ticketsSold: 0,
+      ticketPrice: priceWei,
+      maxResalePrice: maxWei,
+      organizer: activeDemoWallet?.address || DEMO_ACCOUNTS.organizer.address,
+      isActive: true,
+      imageURI: imageURI || "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=1000&q=80",
+    };
+    demoEventsState.unshift(newEv);
+    return createSimulatedTx("createEvent");
+  }
   const contract = await getSignerContract();
   const priceWei = ethers.parseEther(ticketPriceEth);
   const maxPriceWei = ethers.parseEther(maxResalePriceEth);
@@ -450,27 +526,103 @@ export async function createEvent(
 }
 
 export async function buyTicket(eventId: number, priceWei: bigint) {
+  if (isDemoActive() || (typeof window !== "undefined" && !(window as any).ethereum)) {
+    const ev = demoEventsState.find(e => e.id === eventId);
+    if (ev) {
+      ev.ticketsSold = Math.min(ev.totalTickets, ev.ticketsSold + 1);
+    }
+    const newTokId = 500 + demoTicketsState.length + 1;
+    const buyerAddr = activeDemoWallet?.address || DEMO_ACCOUNTS.attendee.address;
+    const newTicket: TicketItem = {
+      tokenId: newTokId,
+      eventId,
+      originalOwner: buyerAddr,
+      currentOwner: buyerAddr,
+      purchasePrice: priceWei,
+      isRedeemed: false,
+      isListedForResale: false,
+      resalePrice: 0n,
+      purchaseTimestamp: Math.floor(Date.now() / 1000),
+      event: ev || demoEventsState[0],
+    };
+    demoTicketsState.unshift(newTicket);
+    return createSimulatedTx("buyTicket");
+  }
   const contract = await getSignerContract();
   return contract.buyTicket(eventId, { value: priceWei });
 }
 
 export async function listTicketForResale(tokenId: number, priceEth: string) {
-  const contract = await getSignerContract();
   const priceWei = ethers.parseEther(priceEth);
+  if (isDemoActive() || (typeof window !== "undefined" && !(window as any).ethereum)) {
+    const t = demoTicketsState.find(tk => tk.tokenId === tokenId);
+    if (!t) throw new Error("Ticket not found.");
+    if (t.isRedeemed) throw new Error("Cannot resell a redeemed or used ticket!");
+    if (t.event && priceWei > t.event.maxResalePrice) {
+      throw new Error("Anti-Scalping Rule Enforced: Resale price exceeds organizer's allowed ceiling of " + formatEth(t.event.maxResalePrice) + " ETH!");
+    }
+    t.isListedForResale = true;
+    t.resalePrice = priceWei;
+    const item: ResaleListingItem = {
+      tokenId: t.tokenId,
+      eventId: t.eventId,
+      seller: t.currentOwner || activeDemoWallet?.address || DEMO_ACCOUNTS.attendee.address,
+      price: priceWei,
+      originalPrice: t.event ? t.event.ticketPrice : t.purchasePrice,
+      maxResalePrice: t.event ? t.event.maxResalePrice : priceWei,
+      eventName: t.event ? t.event.name : "Event",
+      eventDate: t.event ? t.event.date : Math.floor(Date.now() / 1000),
+      eventVenue: t.event ? t.event.venue : "Venue",
+      imageURI: t.event ? t.event.imageURI : "",
+    };
+    const existIdx = demoResaleState.findIndex(r => r.tokenId === tokenId);
+    if (existIdx >= 0) demoResaleState[existIdx] = item;
+    else demoResaleState.unshift(item);
+    return createSimulatedTx("listTicketForResale");
+  }
+  const contract = await getSignerContract();
   return contract.listTicketForResale(tokenId, priceWei);
 }
 
 export async function cancelResaleListing(tokenId: number) {
+  if (isDemoActive() || (typeof window !== "undefined" && !(window as any).ethereum)) {
+    const t = demoTicketsState.find(tk => tk.tokenId === tokenId);
+    if (t) {
+      t.isListedForResale = false;
+      t.resalePrice = 0n;
+    }
+    demoResaleState = demoResaleState.filter(r => r.tokenId !== tokenId);
+    return createSimulatedTx("cancelResaleListing");
+  }
   const contract = await getSignerContract();
   return contract.cancelResaleListing(tokenId);
 }
 
 export async function buyResaleTicket(tokenId: number, priceWei: bigint) {
+  if (isDemoActive() || (typeof window !== "undefined" && !(window as any).ethereum)) {
+    const buyerAddr = activeDemoWallet?.address || DEMO_ACCOUNTS.attendee.address;
+    const t = demoTicketsState.find(tk => tk.tokenId === tokenId);
+    if (t) {
+      t.isListedForResale = false;
+      t.resalePrice = 0n;
+      t.currentOwner = buyerAddr;
+    }
+    demoResaleState = demoResaleState.filter(r => r.tokenId !== tokenId);
+    return createSimulatedTx("buyResaleTicket");
+  }
   const contract = await getSignerContract();
   return contract.buyResaleTicket(tokenId, { value: priceWei });
 }
 
 export async function redeemTicket(tokenId: number) {
+  if (isDemoActive() || (typeof window !== "undefined" && !(window as any).ethereum)) {
+    const t = demoTicketsState.find(tk => tk.tokenId === tokenId);
+    if (t) {
+      if (t.isRedeemed) throw new Error("Ticket is already redeemed!");
+      t.isRedeemed = true;
+    }
+    return createSimulatedTx("redeemTicket");
+  }
   const contract = await getSignerContract();
   return contract.redeemTicket(tokenId);
 }
