@@ -1,3 +1,35 @@
+# A MINI-PROJECT REPORT
+## ON
+# DECENTRALIZED EVENT TICKETING SYSTEM USING SMART CONTRACTS WITH ANTI-SCALPING AND NFT-BASED TICKET VERIFICATION (TICKETCHAIN)
+
+*Submitted in partial fulfillment of the requirements for the award of the degree of*  
+**BACHELOR OF TECHNOLOGY / BACHELOR OF ENGINEERING**  
+**IN**  
+**COMPUTER SCIENCE AND ENGINEERING**
+
+**Academic Year:** 2026 - 2027  
+**Live Application URL:** https://ticketchain-frontend.onrender.com/  
+**GitHub Repository:** https://github.com/gt1432/blockchain-event-ticketing  
+**Smart Contract:** ERC-721 NFT (Solidity 0.8.24, Cancun EVM, OpenZeppelin v5)  
+**Test Suite:** 47/47 Hardhat Unit & Security Tests Passing (100% Pass Rate)  
+
+---
+
+### BONAFIDE CERTIFICATE
+This is to certify that the mini-project entitled **"Decentralized Event Ticketing System Using Smart Contracts with Anti-Scalping and NFT-Based Ticket Verification"** is the bonafide work of the student submitted in partial fulfillment of academic requirements. The system architecture, Solidity smart contracts, automated test harness, and Web3 user interface have been fully implemented, tested, and verified.
+
+---
+
+### CANDIDATE'S DECLARATION
+I hereby declare that this mini-project report entitled **"TicketChain"** is an authentic record of original engineering work. The decentralized protocols, anti-scalping price cap algorithms, dynamic QR verification engine, and smart contracts described herein were developed and deployed independently under academic supervision.
+
+---
+
+### ACKNOWLEDGEMENTS
+I wish to express my deep sense of gratitude to our project guide, department faculty, and laboratory coordinators for their continuous encouragement and technical reviews during the development of this decentralized application.
+
+---
+
 # TicketChain: Decentralized Event Ticketing System Using Smart Contracts with Anti-Scalping and NFT-Based Ticket Verification
 
 **Comprehensive Technical Project Report & Architectural Specification**  
